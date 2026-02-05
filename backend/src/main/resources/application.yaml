@@ -1,3 +1,51 @@
 spring:
   application:
     name: travel-planner-api
+
+  # 데이터베이스 설정
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:travel_db}
+    username: ${DB_USER:devuser}
+    password: ${DB_PASSWORD:devpassword}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA/Hibernate 설정
+  jpa:
+    hibernate:
+      ddl-auto: update # 엔티티 수정 시 DB 테이블 자동 반영
+    show-sql: true     # 실행되는 쿼리를 콘솔에 출력
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis 설정
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # OAuth2 및 Security 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+  # Spring AI (Gemini) 설정
+  ai:
+    google:
+      vertex-ai:
+        gemini:
+          project-id: ${GOOGLE_CLOUD_PROJECT_ID}
+          location: ${GOOGLE_CLOUD_LOCATION}
+
+# JWT 사용자 정의 설정 (우리가 직접 만들 클래스에서 참조할 값)
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}

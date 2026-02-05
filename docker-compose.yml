@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # 데이터베이스 (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: travel-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # ${DB_USER}와 ${DB_NAME} 변수를 사용하여 범용성 있게 수정
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 캐시 및 인증 (Redis)
+  redis:
+    image: redis:alpine
+    container_name: travel-redis
+    ports:
+      - "6379:6379"
+
+  # 백엔드 (Spring Boot)
+  backend:
+    build: ./backend
+    container_name: travel-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_AI_VERTEX_AI_GEMINI_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy # db의 healthcheck가 통과될 때까지 대기
+      redis:
+        condition: service_started
+
+  # 프런트엔드 (Next.js)
+  frontend:
+    build: ./frontend
+    container_name: travel-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8080
+    depends_on:
+      - backend
